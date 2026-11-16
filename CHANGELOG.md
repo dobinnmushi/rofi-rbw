@@ -1,6 +1,7 @@
 # NEXY
 ## Fixed
 - HTML characters are displayed correctly in rofi. (#145)
+- Copying with `wl-copy` older than 2.3.0, which lacks `--sensitive`, works again.
 
 ## Added
 - Identities are listed. Selecting one opens the target menu, as they have many fields.

@@ -17,7 +17,8 @@ class WlClipboarder(Clipboarder):
         return "wl-copy"
 
     def copy_to_clipboard(self, characters: str) -> None:
-        run(["wl-copy", "--sensitive"], input=characters, encoding="utf-8")
+        command = ["wl-copy", "--sensitive"] if self.__supports_sensitive() else ["wl-copy"]
+        run(command, input=characters, encoding="utf-8")
 
         self.__last_copied_characters = characters
 
@@ -28,6 +29,10 @@ class WlClipboarder(Clipboarder):
             if self.__fetch_clipboard_content() == self.__last_copied_characters:
                 run(["wl-copy", "--clear"])
                 self.__last_copied_characters = None
+
+    @staticmethod
+    def __supports_sensitive() -> bool:
+        return "--sensitive" in run(["wl-copy", "--help"], capture_output=True, encoding="utf-8").stdout
 
     def __fetch_clipboard_content(self) -> str:
         return run(["wl-paste", "-n"], capture_output=True, encoding="utf-8").stdout
