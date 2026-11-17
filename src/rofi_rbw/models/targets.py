@@ -92,3 +92,14 @@ class TypeTargets:
     DELAY = TypeTarget("delay")
     ENTER = TypeTarget("enter")
     TAB = TypeTarget("tab")
+
+
+def needs_no_secret(targets: "list[Target] | None") -> bool:
+    """True when none of the targets is a secret: only the username, URIs, and the typing helpers (tab, enter, delay).
+    The entry can then be fetched without its secrets (``rbw get --public``), if the rbw in use supports that.
+
+    Judged by the target's value, not its class: a keybinding such as ``type:username:tab:password`` builds *every* target as a
+    TypeTarget (see argument_parsing), so the class says nothing about whether a target is a secret."""
+    if not targets:
+        return False
+    return all(t.is_uri() or t.raw in ("username", "tab", "enter", "delay") for t in targets)

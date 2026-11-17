@@ -34,10 +34,11 @@ class Rbw:
             key=lambda x: x.folder.lower() + x.name.lower(),
         )
 
-    def fetch_credentials(self, entry: Entry) -> DetailedEntry:
+    def fetch_credentials(self, entry: Entry, public: bool = False) -> DetailedEntry:
+        """public=True asks rbw for the entry without its secrets (``rbw get --public``); only logins use it"""
         match entry.type:
             case EntryType.LOGIN.value:
-                return self.__fetch_login(entry)
+                return self.__fetch_login(entry, public)
             case EntryType.CARD.value:
                 return self.__fetch_card(entry)
             case EntryType.NOTE.value:
@@ -48,8 +49,8 @@ class Rbw:
                 print(f"Unsupported type: {entry.type}")
                 exit(7)
 
-    def __fetch_login(self, entry: Entry) -> Credentials:
-        data = self.__load_from_rbw(entry.name, entry.username, entry.folder)
+    def __fetch_login(self, entry: Entry, public: bool = False) -> Credentials:
+        data = self.__load_from_rbw(entry.name, entry.username, entry.folder, public)
 
         return Credentials(
             entry.name,
@@ -115,13 +116,16 @@ class Rbw:
             data["notes"],
         )
 
-    def __load_from_rbw(self, name: str, username: str, folder: str | None) -> dict[str, Any]:
+    def __load_from_rbw(self, name: str, username: str, folder: str | None, public: bool = False) -> dict[str, Any]:
         command = ["rbw", "get", "--raw", name]
         if username:
             command.append(username)
 
         if folder:
             command.extend(["--folder", folder])
+
+        if public:
+            command.append("--public")
 
         data = run(command, capture_output=True, encoding="utf-8").stdout
 

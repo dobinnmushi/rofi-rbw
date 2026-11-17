@@ -1,3 +1,5 @@
+import os
+import sys
 import time
 
 from .argument_parsing import parse_arguments
@@ -6,7 +8,8 @@ from .clipboarder.clipboarder import Clipboarder
 from .models.action import Action
 from .models.credentials import Credentials
 from .models.detailed_entry import DetailedEntry
-from .models.targets import Target, Targets, TypeTargets
+from .models.EntryType import EntryType
+from .models.targets import Target, Targets, TypeTargets, needs_no_secret
 from .notifier import Notifier
 from .rbw import Rbw
 from .selector.selector import Selector
@@ -53,7 +56,16 @@ class RofiRbw(object):
         if selected_action == Action.CANCEL:
             return
 
-        entry = self.rbw.fetch_credentials(selected_entry)
+        # With ROFI_RBW_FETCH_PUBLIC=1 and targets that contain no secret (e.g. only the username), ask rbw for the entry
+        # without its secrets. An rbw that does not know --public (anything but bw-vault's wrapper) must not get this variable.
+        public = (
+            os.environ.get("ROFI_RBW_FETCH_PUBLIC") == "1"
+            and selected_entry.type == EntryType.LOGIN.value
+            and needs_no_secret(selected_targets)
+        )
+        if public:
+            print("rofi-rbw: fetching the entry without its secrets (ROFI_RBW_FETCH_PUBLIC)", file=sys.stderr)
+        entry = self.rbw.fetch_credentials(selected_entry, public=public)
 
         if self.args.use_cache:
             cache.update(selected_entry)
